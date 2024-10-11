@@ -22,11 +22,20 @@ fonds = {
         "time in market": 20,
         "dividend yield": 0.0,
         "management fee": 0.0
+    },
+    "Some fund": {
+        "performance": 300,
+        "performance years": 10,
+        "principal": 1000,
+        "initial fee": 2.5,
+        "time in market": 20,
+        "dividend yield": 1.2,
+        "management fee": 1.5
     }
 }
 
 markers = ["o", "s", "D", "P", "X", "v"]
-plt.figure(figsize=(12, 9))
+plt.figure(figsize=(14, 9))
 
 for ((key, value), marker) in zip(fonds.items(), markers):
     performance = value["performance"] / 100 + 1
@@ -43,7 +52,9 @@ for ((key, value), marker) in zip(fonds.items(), markers):
 
 plt.xlabel("Years")
 plt.ylabel("Value")
-plt.title("Compound Interest")
+plt.xticks(np.arange(0, time_in_market + 1, 1))
+plt.yticks(np.arange(0, 20000, 1000))
+plt.title("Comparison of Expected Performances")
 plt.grid(True)
 plt.legend()
 plt.tight_layout()
