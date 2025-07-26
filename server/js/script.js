@@ -22,28 +22,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Platform info toggle functionality
-    const infoToggleBtn = document.getElementById('infoToggleBtn');
-    const infoContent = document.getElementById('infoContent');
-    
-    if (infoToggleBtn && infoContent) {
-        infoToggleBtn.addEventListener('click', function() {
-            infoContent.classList.toggle('hidden');
-            const isHidden = infoContent.classList.contains('hidden');
-            infoToggleBtn.innerHTML = isHidden ? 
-                `<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M8 0a8 8 0 1 0 8 8 8 8 0 0 0-8-8zm0 14a6 6 0 1 1 6-6 6 6 0 0 1-6 6z"/>
-                    <path d="M8 4a4 4 0 1 0 4 4 4 4 0 0 0-4-4zm0 6a2 2 0 1 1 2-2 2 2 0 0 1-2 2z"/>
-                </svg>
-                Jak platforma funguje` :
-                `<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M8 0a8 8 0 1 0 8 8 8 8 0 0 0-8-8zm0 14a6 6 0 1 1 6-6 6 6 0 0 1-6 6z"/>
-                    <path d="M8 4a4 4 0 1 0 4 4 4 4 0 0 0-4-4zm0 6a2 2 0 1 1 2-2 2 2 0 0 1-2 2z"/>
-                </svg>
-                Skrýt informace`;
-        });
-    }
-    
     let sortedQuestions = [];
     
     // Initialize
