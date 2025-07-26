@@ -40,6 +40,7 @@ if ($currentUser === null) {
 
 // Prepare answers data for JavaScript
 $userAnswers = isset($currentUser['answers']) ? $currentUser['answers'] : [];
+$skills = isset($questionsData['skills']) ? $questionsData['skills'] : [];
 ?>
 
 <!DOCTYPE html>
@@ -81,6 +82,7 @@ $userAnswers = isset($currentUser['answers']) ? $currentUser['answers'] : [];
         const currentUser = <?php echo json_encode($username); ?>;
         const userAnswers = <?php echo json_encode($userAnswers); ?>;
         const allQuestions = <?php echo json_encode($questions); ?>;
+        const allSkills = <?php echo json_encode($skills); ?>;
     </script>
     <script src="js/script.js"></script>
 </body>

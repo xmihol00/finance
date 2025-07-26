@@ -126,191 +126,214 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderQuestions() {
         questionsContainer.innerHTML = '';
         
+        // Render standalone questions
         sortedQuestions.forEach(question => {
-            const answerHistory = userAnswers[question.id] || { correct: 0, incorrect: 0 };
-            const totalAnswers = answerHistory.correct + answerHistory.incorrect;
-            const correctPercentage = totalAnswers > 0 
-                ? Math.round((answerHistory.correct / totalAnswers) * 100) 
-                : 0;
-            
-            const questionElement = document.createElement('div');
-            questionElement.className = 'question-card';
-            questionElement.dataset.id = question.id;
-            
-            // Add status class based on answer history
-            if (totalAnswers === 0) {
-                questionElement.classList.add('new');
-            } else if (answerHistory.correct > answerHistory.incorrect) {
-                questionElement.classList.add('mostly-correct');
-            } else {
-                questionElement.classList.add('needs-practice');
-            }
-            
-            // Determine if this is a multiple choice question
-            const correctAnswers = question.answers.filter(answer => answer.correct);
-            const isMultipleChoice = correctAnswers.length > 1;
-            
-            // Generate answer options HTML
-            const answersHtml = question.answers.map((answer, index) => {
-                const inputType = isMultipleChoice ? 'checkbox' : 'radio';
-                const name = isMultipleChoice ? `question-${question.id}` : `question-${question.id}`;
-                const value = answer.id;
-                
-                return `
-                    <div class="answer-option">
-                        <input type="${inputType}" 
-                               id="answer-${question.id}-${answer.id}" 
-                               name="${name}" 
-                               value="${value}"
-                               class="answer-input">
-                        <label class="answer-label">
-                            ${answer.text}
-                        </label>
-                    </div>
-                `;
-            }).join('');
-            
-            questionElement.innerHTML = `
-                <div class="question-header">
-                    <div class="question-id">#${question.id}</div>
-                    <div class="question-stats">
-                        <span class="correct-count">${answerHistory.correct}</span> / 
-                        <span class="incorrect-count">${answerHistory.incorrect}</span>
-                        ${totalAnswers > 0 ? `<span class="percentage">(${correctPercentage}% správně)</span>` : ''}
-                    </div>
-                </div>
-                <div class="question-content">
-                    <div class="question-text">${question.text}</div>
-                    <div class="question-type">
-                        ${isMultipleChoice ? 'Více možností' : 'Jedna možnost'}
-                    </div>
-                    <div class="answers-container">
-                        ${answersHtml}
-                    </div>
-                    <div class="question-justification hidden">${question.justification}</div>
-                </div>
-                <div class="question-actions">
-                    <button class="btn submit-answer-btn">Odeslat odpověď</button>
-                    <div class="result-feedback hidden">
-                        <div class="result-message"></div>
-                        <div class="feedback-buttons">
-                            <button class="btn show-justification-btn">Zobrazit vysvětlení</button>
-                            <button class="btn try-again-btn">Zkusit znovu</button>
-                        </div>
-                    </div>
+            renderSingleQuestion(question, questionsContainer);
+        });
+
+        // Render case studies (skills)
+        allSkills.forEach(skillCase => {
+            const caseDiv = document.createElement('div');
+            caseDiv.className = 'case-study';
+            caseDiv.innerHTML = `
+                <div class="case-description">
+                    <strong>Případová studie:</strong> ${skillCase.case_description}
                 </div>
             `;
-            
-            questionsContainer.appendChild(questionElement);
-            
-            // Add event listeners for answer selection
-            const answerOptions = questionElement.querySelectorAll('.answer-option');
-            answerOptions.forEach(option => {
-                const input = option.querySelector('.answer-input');
-                const label = option.querySelector('.answer-label');
-                
-                // Add visual feedback when option is clicked
-                option.addEventListener('click', function(e) {
-                    // Don't toggle if clicking directly on the input
-                    if (e.target === input) {
-                        return;
-                    }
-                    
-                    // For radio buttons, just check the clicked one
-                    if (input.type === 'radio') {
-                        input.checked = true;
-                    } else {
-                        // For checkboxes, toggle the state
-                        input.checked = !input.checked;
-                    }
-                    
-                    updateOptionStyle(option, input.checked);
-                });
-                
-                // Update style when input changes
-                input.addEventListener('change', function() {
-                    updateOptionStyle(option, this.checked);
-                });
-                
-                // Initial style update
-                updateOptionStyle(option, input.checked);
+            // Render each question in the case
+            skillCase.questions.forEach(question => {
+                renderSingleQuestion(question, caseDiv, skillCase.case_id);
             });
+            questionsContainer.appendChild(caseDiv);
+        });
+    }
+
+    function renderSingleQuestion(question, parent, caseId) {
+        const answerHistory = userAnswers[question.id] || { correct: 0, incorrect: 0 };
+        const totalAnswers = answerHistory.correct + answerHistory.incorrect;
+        const correctPercentage = totalAnswers > 0 
+            ? Math.round((answerHistory.correct / totalAnswers) * 100) 
+            : 0;
+        
+        const questionElement = document.createElement('div');
+        questionElement.className = 'question-card';
+        questionElement.dataset.id = question.id;
+        if (caseId) questionElement.dataset.caseId = caseId;
+        
+        // Add status class based on answer history
+        if (totalAnswers === 0) {
+            questionElement.classList.add('new');
+        } else if (answerHistory.correct > answerHistory.incorrect) {
+            questionElement.classList.add('mostly-correct');
+        } else {
+            questionElement.classList.add('needs-practice');
+        }
+        
+        // Determine if this is a multiple choice question
+        const correctAnswers = question.answers.filter(answer => answer.correct);
+        const isMultipleChoice = correctAnswers.length > 1;
+        
+        // Generate answer options HTML
+        const answersHtml = question.answers.map((answer, index) => {
+            const inputType = isMultipleChoice ? 'checkbox' : 'radio';
+            const name = isMultipleChoice ? `question-${question.id}` : `question-${question.id}`;
+            const value = answer.id;
             
-            // Add event listeners
-            const submitBtn = questionElement.querySelector('.submit-answer-btn');
-            const resultFeedback = questionElement.querySelector('.result-feedback');
-            const resultMessage = questionElement.querySelector('.result-message');
-            const showJustificationBtn = questionElement.querySelector('.show-justification-btn');
-            const tryAgainBtn = questionElement.querySelector('.try-again-btn');
-            const justification = questionElement.querySelector('.question-justification');
+            return `
+                <div class="answer-option">
+                    <input type="${inputType}" 
+                           id="answer-${question.id}-${answer.id}" 
+                           name="${name}" 
+                           value="${value}"
+                           class="answer-input">
+                    <label class="answer-label">
+                        ${answer.text}
+                    </label>
+                </div>
+            `;
+        }).join('');
+        
+        questionElement.innerHTML = `
+            <div class="question-header">
+                <div class="question-id">#${question.id}</div>
+                <div class="question-stats">
+                    <span class="correct-count">${answerHistory.correct}</span> / 
+                    <span class="incorrect-count">${answerHistory.incorrect}</span>
+                    ${totalAnswers > 0 ? `<span class="percentage">(${correctPercentage}% správně)</span>` : ''}
+                </div>
+            </div>
+            <div class="question-content">
+                <div class="question-text">${question.text}</div>
+                <div class="question-type">
+                    ${isMultipleChoice ? 'Více možností' : 'Jedna možnost'}
+                </div>
+                <div class="answers-container">
+                    ${answersHtml}
+                </div>
+                <div class="question-justification hidden">${question.justification}</div>
+            </div>
+            <div class="question-actions">
+                <button class="btn submit-answer-btn">Odeslat odpověď</button>
+                <div class="result-feedback hidden">
+                    <div class="result-message"></div>
+                    <div class="feedback-buttons">
+                        <button class="btn show-justification-btn">Zobrazit vysvětlení</button>
+                        <button class="btn try-again-btn">Zkusit znovu</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        parent.appendChild(questionElement);
+        // ... rest of the event listeners and logic for a single question ...
+        // (Copy the event listeners and logic from the previous renderQuestions implementation)
+        // ...
+        // Add event listeners for answer selection
+        const answerOptions = questionElement.querySelectorAll('.answer-option');
+        answerOptions.forEach(option => {
+            const input = option.querySelector('.answer-input');
+            const label = option.querySelector('.answer-label');
             
-            submitBtn.addEventListener('click', function() {
-                const selectedAnswers = getSelectedAnswers(questionElement, question.id);
-                
-                if (selectedAnswers.length === 0) {
-                    alert('Prosím vyberte alespoň jednu odpověď.');
+            // Add visual feedback when option is clicked
+            option.addEventListener('click', function(e) {
+                // Don't toggle if clicking directly on the input
+                if (e.target === input) {
                     return;
                 }
                 
-                // Check if answer is correct
-                const correctAnswerIds = question.answers
-                    .filter(answer => answer.correct)
-                    .map(answer => answer.id.toString());
-                
-                const isCorrect = arraysEqual(selectedAnswers.sort(), correctAnswerIds.sort());
-                
-                // Show result feedback
-                resultFeedback.classList.remove('hidden');
-                submitBtn.classList.add('hidden');
-                
-                if (isCorrect) {
-                    resultMessage.textContent = 'Správně! Výborně!';
-                    resultMessage.className = 'result-message correct';
+                // For radio buttons, just check the clicked one
+                if (input.type === 'radio') {
+                    input.checked = true;
                 } else {
-                    resultMessage.textContent = 'Nesprávně. Zkuste to znovu!';
-                    resultMessage.className = 'result-message incorrect';
-                    
-                    // Show correct answers
-                    showCorrectAnswers(questionElement, question);
+                    // For checkboxes, toggle the state
+                    input.checked = !input.checked;
                 }
                 
-                // Submit answer to server
-                submitAnswer(question.id, isCorrect, questionElement);
+                updateOptionStyle(option, input.checked);
             });
             
-            showJustificationBtn.addEventListener('click', function() {
-                justification.classList.remove('hidden');
-                showJustificationBtn.classList.add('hidden');
+            // Update style when input changes
+            input.addEventListener('change', function() {
+                updateOptionStyle(option, this.checked);
             });
+            
+            // Initial style update
+            updateOptionStyle(option, input.checked);
+        });
+        
+        // Add event listeners
+        const submitBtn = questionElement.querySelector('.submit-answer-btn');
+        const resultFeedback = questionElement.querySelector('.result-feedback');
+        const resultMessage = questionElement.querySelector('.result-message');
+        const showJustificationBtn = questionElement.querySelector('.show-justification-btn');
+        const tryAgainBtn = questionElement.querySelector('.try-again-btn');
+        const justification = questionElement.querySelector('.question-justification');
+        
+        submitBtn.addEventListener('click', function() {
+            const selectedAnswers = getSelectedAnswers(questionElement, question.id);
+            
+            if (selectedAnswers.length === 0) {
+                alert('Prosím vyberte alespoň jednu odpověď.');
+                return;
+            }
+            
+            // Check if answer is correct
+            const correctAnswerIds = question.answers
+                .filter(answer => answer.correct)
+                .map(answer => answer.id.toString());
+            
+            const isCorrect = arraysEqual(selectedAnswers.sort(), correctAnswerIds.sort());
+            
+            // Show result feedback
+            resultFeedback.classList.remove('hidden');
+            submitBtn.classList.add('hidden');
+            
+            if (isCorrect) {
+                resultMessage.textContent = 'Správně! Výborně!';
+                resultMessage.className = 'result-message correct';
+            } else {
+                resultMessage.textContent = 'Nesprávně. Zkuste to znovu!';
+                resultMessage.className = 'result-message incorrect';
+                
+                // Show correct answers
+                showCorrectAnswers(questionElement, question);
+            }
+            
+            // Submit answer to server
+            submitAnswer(question.id, isCorrect, questionElement);
+        });
+        
+        showJustificationBtn.addEventListener('click', function() {
+            justification.classList.remove('hidden');
+            showJustificationBtn.classList.add('hidden');
+        });
 
-            tryAgainBtn.addEventListener('click', function() {
-                // Reset form
-                const inputs = questionElement.querySelectorAll('input[type="checkbox"], input[type="radio"]');
-                inputs.forEach(input => input.checked = false);
-                
-                // Reset answer styling
-                const answerOptions = questionElement.querySelectorAll('.answer-option');
-                answerOptions.forEach(option => {
-                    option.style.borderColor = '';
-                    option.style.backgroundColor = '';
-                    option.style.color = '';
-                    option.classList.remove('selected');
-                });
-                
-                // Hide feedback and show submit button again
-                const resultFeedback = questionElement.querySelector('.result-feedback');
-                const submitBtn = questionElement.querySelector('.submit-answer-btn');
-                const justification = questionElement.querySelector('.question-justification');
-                const showJustificationBtn = questionElement.querySelector('.show-justification-btn');
-                
-                resultFeedback.classList.add('hidden');
-                submitBtn.classList.remove('hidden');
-                justification.classList.add('hidden');
-                showJustificationBtn.classList.remove('hidden');
+        tryAgainBtn.addEventListener('click', function() {
+            // Reset form
+            const inputs = questionElement.querySelectorAll('input[type="checkbox"], input[type="radio"]');
+            inputs.forEach(input => input.checked = false);
+            
+            // Reset answer styling
+            const answerOptions = questionElement.querySelectorAll('.answer-option');
+            answerOptions.forEach(option => {
+                option.style.borderColor = '';
+                option.style.backgroundColor = '';
+                option.style.color = '';
+                option.classList.remove('selected');
             });
+            
+            // Hide feedback and show submit button again
+            const resultFeedback = questionElement.querySelector('.result-feedback');
+            const submitBtn = questionElement.querySelector('.submit-answer-btn');
+            const justification = questionElement.querySelector('.question-justification');
+            const showJustificationBtn = questionElement.querySelector('.show-justification-btn');
+            
+            resultFeedback.classList.add('hidden');
+            submitBtn.classList.remove('hidden');
+            justification.classList.add('hidden');
+            showJustificationBtn.classList.remove('hidden');
         });
     }
-    
+
     function getSelectedAnswers(questionElement, questionId) {
         const selectedInputs = questionElement.querySelectorAll(`input[name="question-${questionId}"]:checked`);
         return Array.from(selectedInputs).map(input => input.value);
