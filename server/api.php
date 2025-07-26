@@ -14,13 +14,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get POST data
     $data = json_decode(file_get_contents('php://input'), true);
     
-    if (!isset($data['questionId'], $data['correct'])) {
+    if (!isset($data['questionId'], $data['correct'], $data['questionSet'], $data['practiceMode'])) {
         echo json_encode(['success' => false, 'error' => 'Invalid data']);
         exit;
     }
     
     $questionId = $data['questionId'];
     $correct = $data['correct'] ? true : false;
+    $questionSet = $data['questionSet'];
+    $practiceMode = $data['practiceMode'];
     
     // Load users data
     $usersFile = 'users.json';
@@ -45,8 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     // Initialize answer record if it doesn't exist
-    if (!isset($usersData['users'][$userIndex]['answers'][$questionId])) {
-        $usersData['users'][$userIndex]['answers'][$questionId] = [
+    if (!isset($usersData['users'][$userIndex]['answers'][$questionSet][$practiceMode][$questionId])) {
+        $usersData['users'][$userIndex]['answers'][$questionSet][$practiceMode][$questionId] = [
             'correct' => 0,
             'incorrect' => 0,
             'last_answer' => ''
@@ -55,20 +57,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Update the answer counts
     if ($correct) {
-        $usersData['users'][$userIndex]['answers'][$questionId]['correct']++;
+        $usersData['users'][$userIndex]['answers'][$questionSet][$practiceMode][$questionId]['correct']++;
     } else {
-        $usersData['users'][$userIndex]['answers'][$questionId]['incorrect']++;
+        $usersData['users'][$userIndex]['answers'][$questionSet][$practiceMode][$questionId]['incorrect']++;
     }
     
     // Update last answer timestamp
-    $usersData['users'][$userIndex]['answers'][$questionId]['last_answer'] = date('Y-m-d H:i:s');
+    $usersData['users'][$userIndex]['answers'][$questionSet][$practiceMode][$questionId]['last_answer'] = date('Y-m-d H:i:s');
     
     // Save users data
     file_put_contents($usersFile, json_encode($usersData, JSON_PRETTY_PRINT));
     
     echo json_encode([
         'success' => true, 
-        'data' => $usersData['users'][$userIndex]['answers'][$questionId]
+        'data' => $usersData['users'][$userIndex]['answers'][$questionSet][$practiceMode][$questionId]
     ]);
     exit;
 }
