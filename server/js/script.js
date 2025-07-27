@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     let sortedQuestions = [];
+    let sortedCaseStudies = [];
     
     // Initialize
     initializeQuestions();
@@ -43,14 +44,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (practiceMode === 'knowledge') {
             sortedQuestions = prioritizeQuestions(allQuestions);
         } else {
-            // For skills mode, flatten all questions from case studies
-            sortedQuestions = [];
-            allSkills.forEach(skillCase => {
-                skillCase.questions.forEach(question => {
-                    sortedQuestions.push(question);
-                });
-            });
-            sortedQuestions = prioritizeQuestions(sortedQuestions);
+            // For skills mode, prioritize case studies
+            sortedCaseStudies = prioritizeCaseStudies(allSkills);
         }
         renderQuestions();
         updateStats();
@@ -92,6 +87,45 @@ document.addEventListener('DOMContentLoaded', function() {
         return questionsCopy.sort((a, b) => b.priorityScore - a.priorityScore);
     }
     
+    function prioritizeCaseStudies(caseStudies) {
+        // Clone case studies to avoid modifying the original
+        const caseStudiesCopy = JSON.parse(JSON.stringify(caseStudies));
+        
+        // Calculate priority score for each case study
+        caseStudiesCopy.forEach(caseStudy => {
+            let totalCorrect = 0;
+            let totalIncorrect = 0;
+            let totalAnswers = 0;
+            
+            // Calculate total answers for this case study
+            caseStudy.questions.forEach(question => {
+                const answerHistory = userAnswers[question.id] || { correct: 0, incorrect: 0 };
+                totalCorrect += answerHistory.correct || 0;
+                totalIncorrect += answerHistory.incorrect || 0;
+                totalAnswers += (answerHistory.correct || 0) + (answerHistory.incorrect || 0);
+            });
+            
+            let priorityScore = 10; // Base score
+            
+            if (totalAnswers === 0) {
+                // Case studies with no answers get highest priority
+                priorityScore = 100;
+            } else {
+                // Case studies with more wrong answers get higher priority
+                const errorRate = totalIncorrect / totalAnswers;
+                priorityScore = 50 + (errorRate * 50);
+                
+                // Gradually decrease priority for frequently answered case studies
+                priorityScore -= Math.min(totalAnswers, 30);
+            }
+            
+            caseStudy.priorityScore = priorityScore;
+        });
+        
+        // Sort by priority score (highest first)
+        return caseStudiesCopy.sort((a, b) => b.priorityScore - a.priorityScore);
+    }
+    
     function shuffleQuestions() {
         if (practiceMode === 'knowledge') {
             // Create a weighted array for shuffling knowledge questions
@@ -131,13 +165,47 @@ document.addEventListener('DOMContentLoaded', function() {
                 return true;
             });
         } else {
-            // For skills mode, shuffle the case studies
-            sortedQuestions = [];
-            const shuffledSkills = [...allSkills].sort(() => Math.random() - 0.5);
-            shuffledSkills.forEach(skillCase => {
+            // For skills mode, create a weighted array for shuffling case studies
+            const weightedCaseStudies = [];
+            
+            allSkills.forEach(skillCase => {
+                let totalCorrect = 0;
+                let totalIncorrect = 0;
+                
+                // Calculate total correct/incorrect answers for this case study
                 skillCase.questions.forEach(question => {
-                    sortedQuestions.push(question);
+                    const answerHistory = userAnswers[question.id] || { correct: 0, incorrect: 0 };
+                    totalCorrect += answerHistory.correct || 0;
+                    totalIncorrect += answerHistory.incorrect || 0;
                 });
+                
+                // Calculate weight: base weight + incorrect answers - correct answers
+                // This gives higher weight to case studies with more wrong answers
+                let weight = 10; // Base weight for case studies with no history
+                weight += totalIncorrect * 5; // Each incorrect answer adds 5 to weight
+                weight -= totalCorrect * 2; // Each correct answer subtracts 2 from weight
+                weight = Math.max(1, weight); // Ensure minimum weight of 1
+                
+                // Add case study multiple times based on weight (higher weight = more copies)
+                for (let i = 0; i < weight; i++) {
+                    weightedCaseStudies.push(skillCase);
+                }
+            });
+            
+            // Shuffle the weighted array
+            for (let i = weightedCaseStudies.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [weightedCaseStudies[i], weightedCaseStudies[j]] = [weightedCaseStudies[j], weightedCaseStudies[i]];
+            }
+            
+            // Remove duplicates while preserving order (case studies with higher weight appear first)
+            const seen = new Set();
+            sortedCaseStudies = weightedCaseStudies.filter(caseStudy => {
+                if (seen.has(caseStudy.case_id)) {
+                    return false;
+                }
+                seen.add(caseStudy.case_id);
+                return true;
             });
         }
     }
@@ -163,29 +231,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 return aCorrect - bCorrect;
             });
         } else {
-            // For skills mode, sort case studies by wrong answers
-            sortedQuestions = [];
-            const sortedSkills = [...allSkills].sort((a, b) => {
-                let aWrong = 0;
-                let bWrong = 0;
+            // For skills mode, sort case studies by total wrong answers
+            sortedCaseStudies = [...allSkills].sort((a, b) => {
+                let aTotalWrong = 0;
+                let aTotalCorrect = 0;
+                let bTotalWrong = 0;
+                let bTotalCorrect = 0;
                 
-                a.questions.forEach(q => {
-                    const history = userAnswers[q.id] || { correct: 0, incorrect: 0 };
-                    aWrong += history.incorrect || 0;
+                // Calculate total wrong/correct answers for case study A
+                a.questions.forEach(question => {
+                    const history = userAnswers[question.id] || { correct: 0, incorrect: 0 };
+                    aTotalWrong += history.incorrect || 0;
+                    aTotalCorrect += history.correct || 0;
                 });
                 
-                b.questions.forEach(q => {
-                    const history = userAnswers[q.id] || { correct: 0, incorrect: 0 };
-                    bWrong += history.incorrect || 0;
+                // Calculate total wrong/correct answers for case study B
+                b.questions.forEach(question => {
+                    const history = userAnswers[question.id] || { correct: 0, incorrect: 0 };
+                    bTotalWrong += history.incorrect || 0;
+                    bTotalCorrect += history.correct || 0;
                 });
                 
-                return bWrong - aWrong;
-            });
-            
-            sortedSkills.forEach(skillCase => {
-                skillCase.questions.forEach(question => {
-                    sortedQuestions.push(question);
-                });
+                // First sort by total wrong answers (descending)
+                if (aTotalWrong !== bTotalWrong) {
+                    return bTotalWrong - aTotalWrong;
+                }
+                
+                // If total wrong answers are equal, sort by total correct answers (ascending)
+                return aTotalCorrect - bTotalCorrect;
             });
         }
     }
@@ -200,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         } else {
             // Render case studies (skills) for skills mode
-            allSkills.forEach(skillCase => {
+            sortedCaseStudies.forEach(skillCase => {
                 const caseDiv = document.createElement('div');
                 caseDiv.className = 'case-study';
                 caseDiv.innerHTML = `

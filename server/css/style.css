@@ -30,7 +30,7 @@ body {
 
 .login-container, .selection-container {
     max-width: 600px;
-    margin: 100px auto;
+    margin: 30px auto;
     background-color: white;
     padding: 30px;
     border-radius: var(--border-radius);

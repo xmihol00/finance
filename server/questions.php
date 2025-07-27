@@ -115,6 +115,22 @@ if (isset($currentUser['answers'][$questionSet][$practiceMode])) {
                 </div>
             </div>
         </header>
+        
+        <div class="controls">
+            <div class="button-group">
+                <button id="shuffle-btn" class="btn">Zamíchat otázky</button>
+                <button id="sort-wrong-btn" class="btn">Seřadit podle chyb</button>
+            </div>
+            <div class="stats">
+                <span id="answered-count">0</span> zodpovězeno z <span id="total-count"><?php echo count($questions); ?></span>
+            </div>
+        </div>
+        
+        <div id="questions-container" class="questions-container">
+            <!-- Questions will be loaded here by JavaScript -->
+            <div class="loading">Načítání otázek...</div>
+        </div>
+    </div>
     
     <script>
         // Pass PHP data to JavaScript
