@@ -1,13 +1,9 @@
 <?php
 session_start();
+require_once 'auth.php';
 
 // Check if user is logged in
-if (!isset($_SESSION['username']) || empty($_SESSION['username'])) {
-    header('Location: index.php');
-    exit;
-}
-
-$username = $_SESSION['username'];
+$username = requireAuth();
 
 // Process question set and practice mode selection
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['question_set'], $_POST['practice_mode'])) {
@@ -92,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['question_set'], $_POS
                 </div>
                 
                 <div class="form-group">
-                    <button type="submit" class="btn btn-primary">Začít procvičování</button>
+                    <button type="submit" class="btn">Začít procvičování</button>
                 </div>
             </form>
             

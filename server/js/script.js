@@ -3,6 +3,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const shuffleBtn = document.getElementById('shuffle-btn');
     const sortWrongBtn = document.getElementById('sort-wrong-btn');
     const answeredCountEl = document.getElementById('answered-count');
+    const correctCountEl = document.getElementById('correct-count');
+    const incorrectCountEl = document.getElementById('incorrect-count');
+    const successRateEl = document.getElementById('success-rate');
     
     // User dropdown functionality
     const userMenuToggle = document.getElementById('userMenuToggle');
@@ -351,37 +354,43 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div class="question-justification hidden">${question.justification}</div>
             </div>
-                            <div class="question-actions">
-                    <button class="btn submit-answer-btn">Odeslat odpověď</button>
-                    <div class="result-feedback hidden">
-                        <div class="result-message"></div>
-                        <div class="feedback-buttons">
-                            <button class="btn show-justification-btn">Zobrazit vysvětlení</button>
-                            <button class="btn try-again-btn">Zkusit znovu</button>
-                        </div>
-                        <div class="notes-section hidden">
-                            <div class="notes-header">
-                                <h4>Poznámky a tipy od ostatních studentů</h4>
-                                <div class="notes-buttons">
-                                    <button class="btn btn-small add-note-btn">Přidat poznámku</button>
-                                    <!-- GPT button temporarily disabled
-                                    <button class="btn btn-small ask-gpt-btn">🤖 Zeptat se GPT</button>
-                                    -->
-                                </div>
-                            </div>
-                            <div class="add-note-form hidden">
-                                <textarea class="note-textarea" placeholder="Napište svou poznámku nebo tip k této otázce..."></textarea>
-                                <div class="note-form-buttons">
-                                    <button class="btn btn-small save-note-btn">Uložit poznámku</button>
-                                    <button class="btn btn-small cancel-note-btn">Zrušit</button>
-                                </div>
-                            </div>
-                            <div class="notes-list">
-                                <!-- Notes will be loaded here -->
-                            </div>
-                        </div>
+            <div class="question-actions">
+                <div class="action-buttons">
+                    <button class="btn btn-small submit-answer-btn">Odeslat odpověď</button>
+                    <div class="notes-buttons">
+                        <button class="btn btn-small show-notes-btn">Zobrazit poznámky</button>
+                        <button class="btn btn-small copy-gpt-prompt-btn">Zkopírovat GPT prompt</button>
                     </div>
                 </div>
+                <div class="result-feedback hidden">
+                    <div class="result-message"></div>
+                    <div class="feedback-buttons">
+                        <button class="btn btn-small show-justification-btn">Zobrazit vysvětlení</button>
+                        <button class="btn btn-small try-again-btn">Zkusit znovu</button>
+                    </div>
+                </div>
+                <div class="notes-section hidden">
+                    <div class="notes-header">
+                        <h4>Poznámky a tipy od ostatních studentů</h4>
+                        <div class="notes-buttons">
+                            <button class="btn btn-small add-note-btn">Přidat poznámku</button>
+                            <!-- GPT button temporarily disabled
+                            <button class="btn btn-small ask-gpt-btn">🤖 Zeptat se GPT</button>
+                            -->
+                        </div>
+                    </div>
+                    <div class="add-note-form hidden">
+                        <textarea class="note-textarea" placeholder="Napište svou poznámku nebo tip k této otázce..."></textarea>
+                        <div class="note-form-buttons">
+                            <button class="btn btn-small save-note-btn">Uložit poznámku</button>
+                            <button class="btn btn-small cancel-note-btn">Zrušit</button>
+                        </div>
+                    </div>
+                    <div class="notes-list">
+                        <!-- Notes will be loaded here -->
+                    </div>
+                </div>
+            </div>
         `;
         parent.appendChild(questionElement);
         // ... rest of the event listeners and logic for a single question ...
@@ -524,9 +533,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 showCorrectAnswers(questionElement, question);
             }
             
-            // Show notes section for all answers (correct and incorrect)
-            showNotesSection(questionElement, question.id);
-            
             // Submit answer to server
             submitAnswer(question.id, isCorrect, questionElement);
         });
@@ -600,6 +606,74 @@ document.addEventListener('DOMContentLoaded', function() {
             if (noteText) {
                 addNote(question.id, noteText, questionElement);
             }
+        });
+        
+        // New notes and GPT prompt functionality
+        const showNotesBtn = questionElement.querySelector('.show-notes-btn');
+        const copyGptPromptBtn = questionElement.querySelector('.copy-gpt-prompt-btn');
+        
+        showNotesBtn.addEventListener('click', function() {
+            const notesSection = questionElement.querySelector('.notes-section');
+            if (notesSection.classList.contains('hidden')) {
+                notesSection.classList.remove('hidden');
+                showNotesBtn.textContent = 'Skrýt poznámky';
+                loadNotes(question.id, questionElement);
+            } else {
+                notesSection.classList.add('hidden');
+                showNotesBtn.textContent = 'Zobrazit poznámky';
+            }
+        });
+        
+        copyGptPromptBtn.addEventListener('click', function() {
+            const prompt = generateGptPrompt(question);
+            
+            // Create or find the prompt display section
+            let promptDisplay = questionElement.querySelector('.gpt-prompt-display');
+            if (!promptDisplay) {
+                promptDisplay = document.createElement('div');
+                promptDisplay.className = 'gpt-prompt-display';
+                questionElement.appendChild(promptDisplay);
+            }
+            
+            // Display the prompt content
+            promptDisplay.innerHTML = `
+                <div class="prompt-header">
+                    <h4>🤖 GPT Prompt</h4>
+                    <button class="btn btn-small close-prompt-btn">✕</button>
+                </div>
+                <div class="prompt-content">
+                    <pre>${prompt}</pre>
+                </div>
+                <div class="prompt-footer">
+                    <span class="copy-status">✅ Zkopírováno do schránky!</span>
+                </div>
+            `;
+            
+            // Add event listener for close button
+            const closeBtn = promptDisplay.querySelector('.close-prompt-btn');
+            closeBtn.addEventListener('click', function() {
+                promptDisplay.remove();
+            });
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(prompt).then(function() {
+                // Success - status is already shown in the prompt display
+            }).catch(function(err) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = prompt;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                // Update status to show it was copied via fallback
+                const statusEl = promptDisplay.querySelector('.copy-status');
+                statusEl.textContent = '✅ Zkopírováno do schránky! (starší prohlížeč)';
+            });
+            
+            // Scroll to the prompt display
+            promptDisplay.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         });
     }
 
@@ -677,6 +751,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateStats();
             } else {
                 console.error('Server error:', data.error);
+                
+                // Check if authentication failed
+                if (data.redirect) {
+                    alert('Vaše přihlášení vypršelo. Budete přesměrováni na přihlašovací stránku.');
+                    window.location.href = data.redirect;
+                    return;
+                }
+                
                 alert('Chyba při ukládání odpovědi. Zkuste to znovu.');
             }
         })
@@ -689,13 +771,29 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateStats() {
         // Count questions that have been answered at least once
         let answeredCount = 0;
+        let totalCorrect = 0;
+        let totalIncorrect = 0;
+        
         for (const questionId in userAnswers) {
-            if (userAnswers[questionId].correct + userAnswers[questionId].incorrect > 0) {
+            const correct = userAnswers[questionId].correct || 0;
+            const incorrect = userAnswers[questionId].incorrect || 0;
+            
+            if (correct + incorrect > 0) {
                 answeredCount++;
+                totalCorrect += correct;
+                totalIncorrect += incorrect;
             }
         }
         
+        // Calculate success rate
+        const totalAnswers = totalCorrect + totalIncorrect;
+        const successRate = totalAnswers > 0 ? Math.round((totalCorrect / totalAnswers) * 100) : 0;
+        
+        // Update the display
         answeredCountEl.textContent = answeredCount;
+        correctCountEl.textContent = totalCorrect;
+        incorrectCountEl.textContent = totalIncorrect;
+        successRateEl.textContent = successRate + '%';
     }
 
     function updateOptionStyle(option, isChecked) {
@@ -743,6 +841,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     renderNotes(data.data, notesList);
                 } else {
                     console.error('Error loading notes:', data.error);
+                    
+                    // Check if authentication failed
+                    if (data.redirect) {
+                        alert('Vaše přihlášení vypršelo. Budete přesměrováni na přihlašovací stránku.');
+                        window.location.href = data.redirect;
+                        return;
+                    }
                 }
             })
             .catch(error => {
@@ -812,6 +917,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Reload notes
                 loadNotes(questionId, questionElement);
             } else {
+                // Check if authentication failed
+                if (data.redirect) {
+                    alert('Vaše přihlášení vypršelo. Budete přesměrováni na přihlašovací stránku.');
+                    window.location.href = data.redirect;
+                    return;
+                }
+                
                 alert('Chyba při ukládání poznámky: ' + data.error);
             }
         })
@@ -883,6 +995,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } else {
                 console.error('Error liking note:', data.error);
+                
+                // Check if authentication failed
+                if (data.redirect) {
+                    alert('Vaše přihlášení vypršelo. Budete přesměrováni na přihlašovací stránku.');
+                    window.location.href = data.redirect;
+                    return;
+                }
             }
         })
         .catch(error => {
@@ -899,5 +1018,39 @@ document.addEventListener('DOMContentLoaded', function() {
             hour: '2-digit',
             minute: '2-digit'
         });
+    }
+    
+    function generateGptPrompt(question) {
+        // Extract correct answers
+        const correctAnswers = question.answers
+            .filter(answer => answer.correct)
+            .map(answer => answer.text);
+        
+        // Extract incorrect answers
+        const incorrectAnswers = question.answers
+            .filter(answer => !answer.correct)
+            .map(answer => answer.text);
+        
+        // Build the prompt (same as in gpt_explainer.py)
+        const prompt = `Jsi odborný lektor financí a finančních trhů. Prosím vysvětli následující otázku z finanční oblasti:
+
+OTÁZKA: ${question.text}
+
+SPRÁVNÉ ODPOVĚDI: ${correctAnswers.join(', ')}
+
+NESPRÁVNÉ ODPOVĚDI: ${incorrectAnswers.join(', ')}
+
+VYSVĚTLENÍ: ${question.justification}
+
+Prosím poskytni:
+1. Stručné a jasné vysvětlení tématu
+2. Proč je správná odpověď správná
+3. Proč jsou ostatní odpovědi nesprávné
+4. Praktický příklad nebo souvislost s reálným světem
+5. Klíčové pojmy a definice
+
+Odpověď piš v češtině, buď přátelský a srozumitelný pro studenty. Měj na paměti, že toto je pro vzdělávací účely.`;
+        
+        return prompt;
     }
 });

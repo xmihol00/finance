@@ -1,13 +1,13 @@
 <?php
 session_start();
+require_once 'auth.php';
 
 // Check if user is logged in
-if (!isset($_SESSION['username']) || empty($_SESSION['username'])) {
-    echo json_encode(['success' => false, 'error' => 'Not logged in']);
+$username = getCurrentUser();
+if (!$username) {
+    echo json_encode(['success' => false, 'error' => 'Not logged in', 'redirect' => 'index.php']);
     exit;
 }
-
-$username = $_SESSION['username'];
 
 // Handle POST request to add a note or get GPT explanation
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

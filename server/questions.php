@@ -1,11 +1,9 @@
 <?php
 session_start();
+require_once 'auth.php';
 
 // Check if user is logged in
-if (!isset($_SESSION['username']) || empty($_SESSION['username'])) {
-    header('Location: index.php');
-    exit;
-}
+$username = requireAuth();
 
 // Check if question set and practice mode are selected
 if (!isset($_SESSION['question_set']) || empty($_SESSION['question_set']) ||
@@ -13,8 +11,6 @@ if (!isset($_SESSION['question_set']) || empty($_SESSION['question_set']) ||
     header('Location: select-set.php');
     exit;
 }
-
-$username = $_SESSION['username'];
 $questionSet = $_SESSION['question_set'];
 $practiceMode = $_SESSION['practice_mode'];
 
@@ -118,11 +114,19 @@ if (isset($currentUser['answers'][$questionSet][$practiceMode])) {
         
         <div class="controls">
             <div class="button-group">
-                <button id="shuffle-btn" class="btn">Zamíchat otázky</button>
-                <button id="sort-wrong-btn" class="btn">Seřadit podle chyb</button>
+                <button id="shuffle-btn" class="btn btn-small">Zamíchat otázky</button>
+                <button id="sort-wrong-btn" class="btn btn-small">Seřadit podle chyb</button>
             </div>
             <div class="stats">
-                <span id="answered-count">0</span> zodpovězeno z <span id="total-count"><?php echo count($questions); ?></span>
+                <div class="stat-item">
+                    <span id="answered-count">0</span> zodpovězeno z <span id="total-count"><?php echo count($questions); ?></span>
+                </div>
+                <div class="stat-item">
+                    <span id="correct-count">0</span> správně, <span id="incorrect-count">0</span> špatně
+                </div>
+                <div class="stat-item">
+                    Úspěšnost: <span id="success-rate">0%</span>
+                </div>
             </div>
         </div>
         

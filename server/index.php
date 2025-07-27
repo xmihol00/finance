@@ -1,7 +1,16 @@
 <?php
 session_start();
+require_once 'auth.php';
 
-// Redirect if already logged in
+// Check for persistent login cookie
+$cookieUsername = validateLoginCookie();
+if ($cookieUsername) {
+    $_SESSION['username'] = $cookieUsername;
+    header('Location: questions.php');
+    exit;
+}
+
+// Redirect if already logged in via session
 if (isset($_SESSION['username']) && !empty($_SESSION['username'])) {
     header('Location: questions.php');
     exit;
@@ -12,6 +21,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['username'])) {
     $username = trim($_POST['username']);
     if (!empty($username)) {
         $_SESSION['username'] = $username;
+        
+        // Set persistent login cookie
+        setLoginCookie($username);
         
         // Create user if doesn't exist
         $usersFile = 'users.json';

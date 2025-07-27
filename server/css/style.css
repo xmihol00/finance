@@ -353,8 +353,47 @@ header {
 }
 
 .stats {
-    font-size: 18px;
-    font-weight: bold;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 14px;
+    color: #666;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.stat-item:first-child {
+    font-weight: 600;
+    color: #333;
+    font-size: 16px;
+}
+
+.stat-item:nth-child(2) {
+    font-size: 13px;
+}
+
+.stat-item:nth-child(3) {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+#correct-count {
+    color: #27ae60;
+    font-weight: 600;
+}
+
+#incorrect-count {
+    color: #e74c3c;
+    font-weight: 600;
+}
+
+#success-rate {
+    color: #3498db;
+    font-weight: 600;
 }
 
 .questions-container {
@@ -480,6 +519,97 @@ header {
     display: flex;
     flex-direction: column;
     gap: 15px;
+}
+
+.action-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.notes-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+/* GPT Prompt Display */
+.gpt-prompt-display {
+    margin-top: 20px;
+    border: 2px solid #3498db;
+    border-radius: var(--border-radius);
+    background-color: #f8f9fa;
+    overflow: hidden;
+}
+
+.prompt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background-color: #3498db;
+    color: white;
+}
+
+.prompt-header h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.close-prompt-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.close-prompt-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.prompt-content {
+    padding: 15px;
+    background-color: white;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.prompt-content pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #2c3e50;
+    background-color: #f8f9fa;
+    padding: 12px;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.prompt-footer {
+    padding: 10px 15px;
+    background-color: #d4edda;
+    border-top: 1px solid #c3e6cb;
+}
+
+.copy-status {
+    color: #155724;
+    font-size: 14px;
+    font-weight: 500;
 }
 
 .result-feedback {
@@ -845,6 +975,19 @@ header {
         align-items: flex-start;
     }
     
+    .stats {
+        gap: 3px;
+    }
+    
+    .stat-item:first-child {
+        font-size: 15px;
+    }
+    
+    .stat-item:nth-child(2),
+    .stat-item:nth-child(3) {
+        font-size: 12px;
+    }
+    
     header {
         flex-direction: column;
         gap: 15px;
@@ -924,5 +1067,51 @@ header {
         min-width: 0;
         font-size: 12px;
         padding: 8px 12px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    
+    .notes-buttons {
+        justify-content: center;
+    }
+    
+    .notes-buttons .btn {
+        flex: 1;
+        font-size: 12px;
+        padding: 8px 10px;
+    }
+    
+    .gpt-prompt-display {
+        margin-top: 15px;
+    }
+    
+    .prompt-header {
+        padding: 10px 12px;
+    }
+    
+    .prompt-header h4 {
+        font-size: 14px;
+    }
+    
+    .prompt-content {
+        padding: 12px;
+    }
+    
+    .prompt-content pre {
+        font-size: 12px;
+        padding: 10px;
+        max-height: 200px;
+    }
+    
+    .prompt-footer {
+        padding: 8px 12px;
+    }
+    
+    .copy-status {
+        font-size: 13px;
     }
 }

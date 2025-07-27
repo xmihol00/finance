@@ -1,9 +1,11 @@
 <?php
 session_start();
+require_once 'auth.php';
 
 // Check if user is logged in
-if (!isset($_SESSION['username']) || empty($_SESSION['username'])) {
-    echo json_encode(['success' => false, 'error' => 'Not logged in']);
+$username = getCurrentUser();
+if (!$username) {
+    echo json_encode(['success' => false, 'error' => 'Not logged in', 'redirect' => 'index.php']);
     exit;
 }
 
