@@ -362,7 +362,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="notes-section hidden">
                             <div class="notes-header">
                                 <h4>Poznámky a tipy od ostatních studentů</h4>
-                                <button class="btn btn-small add-note-btn">Přidat poznámku</button>
+                                <div class="notes-buttons">
+                                    <button class="btn btn-small add-note-btn">Přidat poznámku</button>
+                                    <!-- GPT button temporarily disabled
+                                    <button class="btn btn-small ask-gpt-btn">🤖 Zeptat se GPT</button>
+                                    -->
+                                </div>
                             </div>
                             <div class="add-note-form hidden">
                                 <textarea class="note-textarea" placeholder="Napište svou poznámku nebo tip k této otázce..."></textarea>
@@ -561,6 +566,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Notes functionality
         const addNoteBtn = questionElement.querySelector('.add-note-btn');
+        // const askGptBtn = questionElement.querySelector('.ask-gpt-btn'); // GPT temporarily disabled
         const addNoteForm = questionElement.querySelector('.add-note-form');
         const noteTextarea = questionElement.querySelector('.note-textarea');
         const saveNoteBtn = questionElement.querySelector('.save-note-btn');
@@ -571,6 +577,17 @@ document.addEventListener('DOMContentLoaded', function() {
             addNoteBtn.classList.add('hidden');
             noteTextarea.focus();
         });
+        
+        // GPT functionality temporarily disabled
+        /*
+        askGptBtn.addEventListener('click', function() {
+            // Disable button and show loading state
+            askGptBtn.disabled = true;
+            askGptBtn.textContent = '🤖 Načítám...';
+            
+            askGpt(question.id, questionElement, askGptBtn);
+        });
+        */
         
         cancelNoteBtn.addEventListener('click', function() {
             addNoteForm.classList.add('hidden');
@@ -740,7 +757,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         notesList.innerHTML = notes.map(note => `
-            <div class="note-item" data-note-id="${note.id}">
+            <div class="note-item" data-note-id="${note.id}" ${note.isGptNote ? 'data-gpt-note="true"' : ''}>
                 <div class="note-header">
                     <span class="note-author">${note.author}</span>
                     <span class="note-date">${formatDate(note.timestamp)}</span>
@@ -803,6 +820,45 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Chyba při ukládání poznámky. Zkuste to znovu.');
         });
     }
+    
+    // GPT functionality temporarily disabled
+    /*
+    function askGpt(questionId, questionElement, gptBtn) {
+        fetch('notes_api.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'ask_gpt',
+                questionId: questionId,
+                questionSet: questionSet,
+                practiceMode: practiceMode
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Reset button
+            gptBtn.disabled = false;
+            gptBtn.textContent = '🤖 Zeptat se GPT';
+            
+            if (data.success) {
+                // Reload notes to show the new GPT note
+                loadNotes(questionId, questionElement);
+            } else {
+                alert('Chyba při získávání odpovědi od GPT: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error asking GPT:', error);
+            alert('Chyba při komunikaci s GPT. Zkuste to znovu.');
+            
+            // Reset button
+            gptBtn.disabled = false;
+            gptBtn.textContent = '🤖 Zeptat se GPT';
+        });
+    }
+    */
     
     function likeNote(noteId, likeBtn) {
         fetch('notes_api.php', {

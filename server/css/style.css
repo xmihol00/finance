@@ -141,6 +141,7 @@ header {
     background: none;
     border: none;
     cursor: pointer;
+    margin-top: 8px;
     padding: 0;
     border-radius: 50%;
     transition: transform 0.2s ease;
@@ -647,8 +648,8 @@ header {
 }
 
 .knowledge-count {
-    background-color: #e3f2fd;
-    color: #1976d2;
+    background-color: #fff3e0;
+    color: #f57c00;
 }
 
 .skills-count {
@@ -674,6 +675,12 @@ header {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 15px;
+}
+
+.notes-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
 }
 
 .notes-header h4 {
@@ -733,6 +740,15 @@ header {
     font-weight: bold;
     color: var(--primary-color);
     font-size: 14px;
+}
+
+.note-item[data-gpt-note="true"] {
+    background-color: #f0f8ff;
+    border-left: 4px solid #3498db;
+}
+
+.note-item[data-gpt-note="true"] .note-author {
+    color: #2980b9;
 }
 
 .note-date {
@@ -895,5 +911,18 @@ header {
         flex-direction: column;
         gap: 5px;
         align-items: flex-start;
+    }
+    
+    .feedback-buttons {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 8px;
+    }
+    
+    .feedback-buttons .btn {
+        flex: 1;
+        min-width: 0;
+        font-size: 12px;
+        padding: 8px 12px;
     }
 }

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPT Integration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        .btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .loading {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <h1>🤖 GPT Integration Test</h1>
+    
+    <div class="test-section">
+        <h3>Test 1: Basic GPT Request</h3>
+        <p>Test the GPT functionality with a real question from the database.</p>
+        <button class="btn" onclick="testGptRequest()">Test GPT Request</button>
+        <div id="result1" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 2: Simulated User Interface</h3>
+        <p>Simulate the actual user interface flow.</p>
+        <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin: 10px 0;">
+            <h4>Poznámky a tipy od ostatních studentů</h4>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button class="btn" onclick="simulateAddNote()">Přidat poznámku</button>
+                <button class="btn" id="gptBtn" onclick="simulateAskGpt()">🤖 Zeptat se GPT</button>
+            </div>
+            <div id="notesList">
+                <p style="color: #666;">Zatím nejsou žádné poznámky nebo tipy k této otázce.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Test 1: Basic GPT Request
+        async function testGptRequest() {
+            const resultDiv = document.getElementById('result1');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = 'Testing GPT request...';
+
+            try {
+                const response = await fetch('notes_api.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'ask_gpt',
+                        questionId: 19359,
+                        questionSet: 'A',
+                        practiceMode: 'knowledge'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = '✅ GPT request successful!\n\nResponse:\n' + JSON.stringify(data.data, null, 2);
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '❌ GPT request failed:\n' + data.error;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ Network error:\n' + error.message;
+            }
+        }
+
+        // Test 2: Simulated User Interface
+        async function simulateAskGpt() {
+            const gptBtn = document.getElementById('gptBtn');
+            const notesList = document.getElementById('notesList');
+            
+            // Disable button and show loading
+            gptBtn.disabled = true;
+            gptBtn.textContent = '🤖 Načítám...';
+            
+            // Show loading in notes list
+            notesList.innerHTML = '<p style="color: #666;">🤖 Načítám odpověď od GPT...</p>';
+
+            try {
+                const response = await fetch('notes_api.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'ask_gpt',
+                        questionId: 19359,
+                        questionSet: 'A',
+                        practiceMode: 'knowledge'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Show the GPT note
+                    notesList.innerHTML = `
+                        <div style="background-color: #f0f8ff; border: 1px solid #ddd; border-left: 4px solid #3498db; padding: 15px; border-radius: 5px; margin: 10px 0;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <span style="font-weight: bold; color: #2980b9;">${data.data.author}</span>
+                                <span style="font-size: 12px; color: #666;">${data.data.timestamp}</span>
+                            </div>
+                            <div style="line-height: 1.6;">${data.data.text.replace(/\n/g, '<br>')}</div>
+                        </div>
+                    `;
+                } else {
+                    notesList.innerHTML = `<p style="color: #e74c3c;">❌ Chyba: ${data.error}</p>`;
+                }
+            } catch (error) {
+                notesList.innerHTML = `<p style="color: #e74c3c;">❌ Síťová chyba: ${error.message}</p>`;
+            } finally {
+                // Reset button
+                gptBtn.disabled = false;
+                gptBtn.textContent = '🤖 Zeptat se GPT';
+            }
+        }
+
+        function simulateAddNote() {
+            alert('Tato funkce by otevřela formulář pro přidání poznámky.');
+        }
+    </script>
+</body>
+</html> 

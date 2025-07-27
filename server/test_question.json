@@ -1,0 +1,26 @@
+{
+    "text": "Kapitálový výnos získaný z investičního nástroje (instrumentu) lze chápat takto:",
+    "justification": "Jde o výnos, jež lze získat pouze z obchodovatelných investičních nástrojů (instrumentů) spočívající v rozdílu jejich kupních a prodejních cen.",
+    "answers": [
+        {
+            "id": 1,
+            "text": "Jedn\u00e1 se o cash flow plynouc\u00ed z jeho dr\u017eby.",
+            "correct": false
+          },
+          {
+            "id": 2,
+            "text": "Jde o celkov\u00fd v\u00fdnos po odpo\u010dtu vynalo\u017een\u00fdch investi\u010dn\u00edch n\u00e1klad\u016f a dan\u00ed.",
+            "correct": false
+          },
+          {
+            "id": 3,
+            "text": "Jde o celkov\u00fd v\u00fdnos po odpo\u010dtu inflace.",
+            "correct": false
+          },
+          {
+            "id": 4,
+            "text": "Jde o v\u00fdnos z obchodov\u00e1n\u00ed investi\u010dn\u00edho n\u00e1stroje plynouc\u00ed z rozd\u00edlu jeho kupn\u00ed a prodejn\u00ed ceny.",
+            "correct": true
+          }
+    ]
+}
