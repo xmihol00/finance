@@ -16,6 +16,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get POST data
     $data = json_decode(file_get_contents('php://input'), true);
     
+    // Check if this is a mark/unmark request
+    if (isset($data['action']) && $data['action'] === 'toggle_mark') {
+        if (!isset($data['questionId'], $data['questionSet'], $data['practiceMode'])) {
+            echo json_encode(['success' => false, 'error' => 'Invalid data for mark toggle']);
+            exit;
+        }
+        
+        $questionId = $data['questionId'];
+        $questionSet = $data['questionSet'];
+        $practiceMode = $data['practiceMode'];
+        
+        // Load users data
+        $usersFile = 'users.json';
+        if (file_exists($usersFile)) {
+            $usersData = json_decode(file_get_contents($usersFile), true);
+        } else {
+            $usersData = ['users' => []];
+        }
+        
+        // Find user
+        $userIndex = -1;
+        foreach ($usersData['users'] as $index => $user) {
+            if ($user['name'] === $username) {
+                $userIndex = $index;
+                break;
+            }
+        }
+        
+        if ($userIndex === -1) {
+            echo json_encode(['success' => false, 'error' => 'User not found']);
+            exit;
+        }
+        
+        // Initialize marked questions if it doesn't exist
+        if (!isset($usersData['users'][$userIndex]['marked_questions'][$questionSet][$practiceMode])) {
+            $usersData['users'][$userIndex]['marked_questions'][$questionSet][$practiceMode] = [];
+        }
+        
+        $markedQuestions = &$usersData['users'][$userIndex]['marked_questions'][$questionSet][$practiceMode];
+        
+        // Toggle mark status
+        $isMarked = in_array($questionId, $markedQuestions);
+        if ($isMarked) {
+            // Remove from marked questions
+            $markedQuestions = array_values(array_filter($markedQuestions, function($id) use ($questionId) {
+                return $id !== $questionId;
+            }));
+        } else {
+            // Add to marked questions
+            $markedQuestions[] = $questionId;
+        }
+        
+        // Save users data
+        file_put_contents($usersFile, json_encode($usersData, JSON_PRETTY_PRINT));
+        
+        echo json_encode([
+            'success' => true, 
+            'data' => [
+                'isMarked' => !$isMarked,
+                'markedCount' => count($markedQuestions)
+            ]
+        ]);
+        exit;
+    }
+    
+    // Handle regular answer submission
     if (!isset($data['questionId'], $data['correct'], $data['questionSet'], $data['practiceMode'])) {
         echo json_encode(['success' => false, 'error' => 'Invalid data']);
         exit;

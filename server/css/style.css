@@ -103,6 +103,24 @@ input[type="text"] {
     background-color: #c0392b;
 }
 
+.btn-marked {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.btn-marked:hover {
+    background-color: #27ae60;
+}
+
+.mark-question-btn.marked {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.mark-question-btn.marked:hover {
+    background-color: #27ae60;
+}
+
 header {
     display: flex;
     justify-content: space-between;
@@ -1081,6 +1099,11 @@ header {
     
     .notes-buttons .btn {
         flex: 1;
+        font-size: 12px;
+        padding: 8px 10px;
+    }
+    
+    .mark-question-btn {
         font-size: 12px;
         padding: 8px 10px;
     }

@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const questionsContainer = document.getElementById('questions-container');
     const shuffleBtn = document.getElementById('shuffle-btn');
     const sortWrongBtn = document.getElementById('sort-wrong-btn');
+    const showMarkedBtn = document.getElementById('show-marked-btn');
     const answeredCountEl = document.getElementById('answered-count');
     const correctCountEl = document.getElementById('correct-count');
     const incorrectCountEl = document.getElementById('incorrect-count');
@@ -27,9 +28,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let sortedQuestions = [];
     let sortedCaseStudies = [];
+    let showOnlyMarked = false;
+    let noteCounts = {};
     
-    // Initialize
-    initializeQuestions();
+    // Load note counts first, then initialize questions
+    loadNoteCounts().then(() => {
+        // Initialize questions after note counts are loaded
+        initializeQuestions();
+        
+        // Update show marked button text if there are marked questions
+        if (markedQuestions.length > 0) {
+            showMarkedBtn.textContent = `Zobrazit označené (${markedQuestions.length})`;
+        }
+    });
     
     // Event listeners
     shuffleBtn.addEventListener('click', function() {
@@ -39,6 +50,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     sortWrongBtn.addEventListener('click', function() {
         sortByWrongAnswers();
+        renderQuestions();
+    });
+    
+    showMarkedBtn.addEventListener('click', function() {
+        showOnlyMarked = !showOnlyMarked;
+        if (showOnlyMarked) {
+            showMarkedBtn.textContent = `Zobrazit všechny (${markedQuestions.length} označených)`;
+        } else {
+            showMarkedBtn.textContent = 'Zobrazit označené';
+        }
         renderQuestions();
     });
     
@@ -270,13 +291,25 @@ document.addEventListener('DOMContentLoaded', function() {
         questionsContainer.innerHTML = '';
         
         if (practiceMode === 'knowledge') {
+            // Filter questions if showOnlyMarked is true
+            const questionsToRender = showOnlyMarked 
+                ? sortedQuestions.filter(question => markedQuestions.includes(question.id))
+                : sortedQuestions;
+            
             // Render standalone questions for knowledge mode
-            sortedQuestions.forEach(question => {
+            questionsToRender.forEach(question => {
                 renderSingleQuestion(question, questionsContainer);
             });
         } else {
+            // Filter case studies if showOnlyMarked is true
+            const caseStudiesToRender = showOnlyMarked 
+                ? sortedCaseStudies.filter(skillCase => 
+                    skillCase.questions.some(question => markedQuestions.includes(question.id))
+                )
+                : sortedCaseStudies;
+            
             // Render case studies (skills) for skills mode
-            sortedCaseStudies.forEach(skillCase => {
+            caseStudiesToRender.forEach(skillCase => {
                 const caseDiv = document.createElement('div');
                 caseDiv.className = 'case-study';
                 caseDiv.innerHTML = `
@@ -284,8 +317,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         <strong>Případová studie:</strong> ${skillCase.case_description}
                     </div>
                 `;
-                // Render each question in the case
-                skillCase.questions.forEach(question => {
+                // Render each question in the case (filter if needed)
+                const questionsToRender = showOnlyMarked 
+                    ? skillCase.questions.filter(question => markedQuestions.includes(question.id))
+                    : skillCase.questions;
+                questionsToRender.forEach(question => {
                     renderSingleQuestion(question, caseDiv, skillCase.case_id);
                 });
                 questionsContainer.appendChild(caseDiv);
@@ -360,6 +396,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="notes-buttons">
                         <button class="btn btn-small show-notes-btn">Zobrazit poznámky</button>
                         <button class="btn btn-small copy-gpt-prompt-btn">Zkopírovat GPT prompt</button>
+                        <button class="btn btn-small mark-question-btn ${markedQuestions.includes(question.id) ? 'marked' : ''}">
+                            ${markedQuestions.includes(question.id) ? '✓ Označeno' : 'Označit otázku'}
+                        </button>
                     </div>
                 </div>
                 <div class="result-feedback hidden">
@@ -393,6 +432,13 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         parent.appendChild(questionElement);
+        
+        // Update note button text with count if available
+        const notesBtn = questionElement.querySelector('.show-notes-btn');
+        // Try both string and number keys for question ID
+        const noteCount = noteCounts[question.id] || noteCounts[question.id.toString()] || 0;
+        notesBtn.textContent = `Zobrazit poznámky (${noteCount})`;
+        
         // ... rest of the event listeners and logic for a single question ...
         // (Copy the event listeners and logic from the previous renderQuestions implementation)
         // ...
@@ -616,11 +662,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const notesSection = questionElement.querySelector('.notes-section');
             if (notesSection.classList.contains('hidden')) {
                 notesSection.classList.remove('hidden');
-                showNotesBtn.textContent = 'Skrýt poznámky';
+                const noteCount = noteCounts[question.id] || noteCounts[question.id.toString()] || 0;
+                showNotesBtn.textContent = `Skrýt poznámky (${noteCount})`;
                 loadNotes(question.id, questionElement);
             } else {
                 notesSection.classList.add('hidden');
-                showNotesBtn.textContent = 'Zobrazit poznámky';
+                const noteCount = noteCounts[question.id] || noteCounts[question.id.toString()] || 0;
+                showNotesBtn.textContent = `Zobrazit poznámky (${noteCount})`;
             }
         });
         
@@ -674,6 +722,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Scroll to the prompt display
             promptDisplay.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+        
+        // Mark question functionality
+        const markQuestionBtn = questionElement.querySelector('.mark-question-btn');
+        markQuestionBtn.addEventListener('click', function() {
+            toggleMarkQuestion(question.id, questionElement, markQuestionBtn);
         });
     }
 
@@ -839,6 +893,18 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.success) {
                     renderNotes(data.data, notesList);
+                    
+                    // Update note count
+                    const noteCount = data.data.length;
+                    noteCounts[questionId] = noteCount;
+                    
+                    // Update button text
+                    const btn = questionElement.querySelector('.show-notes-btn');
+                    if (btn) {
+                        if (noteCount > 0) {
+                            btn.textContent = `Zobrazit poznámky (${noteCount})`;
+                        }
+                    }
                 } else {
                     console.error('Error loading notes:', data.error);
                     
@@ -916,6 +982,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Reload notes
                 loadNotes(questionId, questionElement);
+                
+                // Update note count
+                updateNoteCount(questionId, 1);
             } else {
                 // Check if authentication failed
                 if (data.redirect) {
@@ -1052,5 +1121,130 @@ Prosím poskytni:
 Odpověď piš v češtině, buď přátelský a srozumitelný pro studenty. Měj na paměti, že toto je pro vzdělávací účely.`;
         
         return prompt;
+    }
+    
+    function toggleMarkQuestion(questionId, questionElement, markBtn) {
+        fetch('api.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'toggle_mark',
+                questionId: questionId,
+                questionSet: questionSet,
+                practiceMode: practiceMode
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const isMarked = data.data.isMarked;
+                
+                // Update button text and class
+                if (isMarked) {
+                    markBtn.textContent = '✓ Označeno';
+                    markBtn.classList.add('marked');
+                    // Add to marked questions array
+                    if (!markedQuestions.includes(questionId)) {
+                        markedQuestions.push(questionId);
+                    }
+                } else {
+                    markBtn.textContent = 'Označit otázku';
+                    markBtn.classList.remove('marked');
+                    // Remove from marked questions array
+                    const index = markedQuestions.indexOf(questionId);
+                    if (index > -1) {
+                        markedQuestions.splice(index, 1);
+                    }
+                }
+                
+                // Update the filter button text if we're currently showing marked questions
+                if (showOnlyMarked) {
+                    showMarkedBtn.textContent = `Zobrazit všechny (${markedQuestions.length} označených)`;
+                }
+            } else {
+                console.error('Server error:', data.error);
+                
+                // Check if authentication failed
+                if (data.redirect) {
+                    alert('Vaše přihlášení vypršelo. Budete přesměrováni na přihlašovací stránku.');
+                    window.location.href = data.redirect;
+                    return;
+                }
+                
+                alert('Chyba při označování otázky. Zkuste to znovu.');
+            }
+        })
+        .catch(error => {
+            console.error('Error marking question:', error);
+            alert('Chyba při komunikaci se serverem. Zkuste to znovu.');
+        });
+    }
+    
+    function loadNoteCounts() {
+        // Fetch all note counts in a single request
+        return fetch(`notes_api.php?action=bulk_counts&questionSet=${questionSet}&practiceMode=${practiceMode}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Store the note counts
+                    noteCounts = data.data;
+                    
+                    // Ensure all questions have a count (even if 0)
+                    if (practiceMode === 'knowledge') {
+                        allQuestions.forEach(question => {
+                            if (!(question.id in noteCounts)) {
+                                noteCounts[question.id] = 0;
+                            }
+                        });
+                    } else {
+                        allSkills.forEach(skillCase => {
+                            skillCase.questions.forEach(question => {
+                                if (!(question.id in noteCounts)) {
+                                    noteCounts[question.id] = 0;
+                                }
+                            });
+                        });
+                    }
+                    
+                    console.log('Note counts stored:', noteCounts); // Debug log
+                } else {
+                    console.error('Error loading note counts:', data.error);
+                    noteCounts = {};
+                }
+            })
+            .catch(error => {
+                console.error('Error loading note counts:', error);
+                noteCounts = {};
+            });
+    }
+    
+    function updateNoteButtonCounts() {
+        // This function is now only used for updating existing buttons when counts change
+        document.querySelectorAll('.show-notes-btn').forEach(btn => {
+            const questionElement = btn.closest('.question-card');
+            const questionId = questionElement.dataset.id;
+            const count = noteCounts[questionId] || noteCounts[questionId.toString()] || 0;
+            
+            btn.textContent = `Zobrazit poznámky (${count})`;
+        });
+    }
+    
+    function updateNoteCount(questionId, increment) {
+        if (!noteCounts[questionId]) {
+            noteCounts[questionId] = 0;
+        }
+        noteCounts[questionId] += increment;
+        
+        // Update the specific button
+        const questionElement = document.querySelector(`[data-id="${questionId}"]`);
+        if (questionElement) {
+            const btn = questionElement.querySelector('.show-notes-btn');
+            if (btn) {
+                const count = noteCounts[questionId];
+                btn.textContent = `Zobrazit poznámky (${count})`;
+            }
+        }
     }
 });

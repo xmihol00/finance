@@ -53,6 +53,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['username'])) {
                         'knowledge' => [],
                         'skills' => []
                     ]
+                ],
+                'marked_questions' => [
+                    'set1' => [
+                        'knowledge' => [],
+                        'skills' => []
+                    ],
+                    'set2' => [
+                        'knowledge' => [],
+                        'skills' => []
+                    ]
                 ]
             ];
             file_put_contents($usersFile, json_encode($usersData, JSON_PRETTY_PRINT));

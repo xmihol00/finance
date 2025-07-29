@@ -118,6 +118,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Handle GET request to get notes for a question
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    // Check if this is a bulk count request
+    if (isset($_GET['action']) && $_GET['action'] === 'bulk_counts') {
+        if (!isset($_GET['questionSet'], $_GET['practiceMode'])) {
+            echo json_encode(['success' => false, 'error' => 'Missing parameters for bulk counts']);
+            exit;
+        }
+        
+        $questionSet = $_GET['questionSet'];
+        $practiceMode = $_GET['practiceMode'];
+        
+        // Load notes data
+        $notesFile = 'notes.json';
+        if (!file_exists($notesFile)) {
+            echo json_encode(['success' => true, 'data' => []]);
+            exit;
+        }
+        
+        $notesData = json_decode(file_get_contents($notesFile), true);
+        
+        // Count notes for each question
+        $noteCounts = [];
+        foreach ($notesData['notes'] as $note) {
+            if ($note['questionSet'] === $questionSet && $note['practiceMode'] === $practiceMode) {
+                $questionId = $note['questionId'];
+                if (!isset($noteCounts[$questionId])) {
+                    $noteCounts[$questionId] = 0;
+                }
+                $noteCounts[$questionId]++;
+            }
+        }
+        
+        echo json_encode(['success' => true, 'data' => $noteCounts]);
+        exit;
+    }
+    
+    // Regular single question notes request
     if (!isset($_GET['questionId'], $_GET['questionSet'], $_GET['practiceMode'])) {
         echo json_encode(['success' => false, 'error' => 'Missing parameters']);
         exit;

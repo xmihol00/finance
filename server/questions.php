@@ -56,6 +56,12 @@ $userAnswers = [];
 if (isset($currentUser['answers'][$questionSet][$practiceMode])) {
     $userAnswers = $currentUser['answers'][$questionSet][$practiceMode];
 }
+
+// Prepare marked questions data for JavaScript
+$markedQuestions = [];
+if (isset($currentUser['marked_questions'][$questionSet][$practiceMode])) {
+    $markedQuestions = $currentUser['marked_questions'][$questionSet][$practiceMode];
+}
 ?>
 
 <!DOCTYPE html>
@@ -116,6 +122,7 @@ if (isset($currentUser['answers'][$questionSet][$practiceMode])) {
             <div class="button-group">
                 <button id="shuffle-btn" class="btn btn-small">Zamíchat otázky</button>
                 <button id="sort-wrong-btn" class="btn btn-small">Seřadit podle chyb</button>
+                <button id="show-marked-btn" class="btn btn-small">Zobrazit označené</button>
             </div>
             <div class="stats">
                 <div class="stat-item">
@@ -140,6 +147,7 @@ if (isset($currentUser['answers'][$questionSet][$practiceMode])) {
         // Pass PHP data to JavaScript
         const currentUser = <?php echo json_encode($username); ?>;
         const userAnswers = <?php echo json_encode($userAnswers); ?>;
+        const markedQuestions = <?php echo json_encode($markedQuestions); ?>;
         const allQuestions = <?php echo json_encode($questions); ?>;
         const allSkills = <?php echo json_encode($skills); ?>;
         const questionSet = <?php echo json_encode($questionSet); ?>;
